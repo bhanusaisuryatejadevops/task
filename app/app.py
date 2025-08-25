@@ -15,6 +15,15 @@ REQ_LATENCY = Histogram(
     "Latency for /sentiment requests in seconds"
 )
 
+@app.route("/", methods=["GET"])
+def index():
+    return (
+        "<h2>🚀 Welcome to the AI Sentiment Analysis API</h2>"
+        "<p>Use <b>POST /sentiment</b> with JSON like "
+        "<code>{\"text\": \"I am happy\"}</code> "
+        "to analyze sentiment.</p>"
+    )
+
 @app.route("/sentiment", methods=["POST"])
 def sentiment():
     start = time.time()
