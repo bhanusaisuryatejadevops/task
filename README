@@ -10,9 +10,8 @@ This document captures the full setup for a scalable AI web application on **AWS
 > - Monitoring: **kube-prometheus-stack** (Prometheus, Alertmanager, Grafana) via Helm
 > - App metrics: `/metrics` (Prometheus Python client) + **PodMonitor**
 > - SSL: ALB HTTPS (self‑signed or ACM), or HTTP when no domain
-> - Security: IRSA, RBAC, NetworkPolicy, secrets, encryption at rest
-> - DR: GitOps/IaC re-provision, Velero (optional), snapshots, runbooks
-
+> - Security: IRSA, RBAC, NetworkPolicy, secrets
+> - DR: GitOps/IaC re-provision, Velero (optional), snapshots
 ---
 ## 1) Cloud Infrastructure Design
 
@@ -63,8 +62,8 @@ This document captures the full setup for a scalable AI web application on **AWS
 ---
 ## 4) CI/CD (GitHub Actions)
 
-**Stages**: Lint & tests → (optional Trivy) → Build & push → Deploy to EKS → Smoke test.
-**Secrets**: Registry creds or OIDC/ECR; kube access via `aws eks update-kubeconfig`.
+**Stages**: tests  → Build & push → Deploy to EKS → Smoke test.
+**Secrets**: Registry creds ECR; kube access via `aws eks update-kubeconfig`.
 **Rollback**: `kubectl rollout undo deploy/sentiment-app -n ai-sentiment`.
 
 ---
@@ -99,7 +98,6 @@ sum(increase(sentiment_requests_total{status="500"}[5m])) > 5
 - **RBAC**: restrict cluster access; disable `kubectl exec` to prod.
 - **Network**: private nodes; SG least privilege; NetworkPolicy.
 - **Secrets**: Kubernetes Secret (KMS) or AWS Secrets Manager.
-- **Images**: scan with Trivy; run as non-root where possible.
 
 ---
 ## 7) Disaster Recovery (DR)
@@ -108,7 +106,6 @@ sum(increase(sentiment_requests_total{status="500"}[5m])) > 5
 - **IaC**: Terraform + remote state → re-provision EKS/ALB/VPC.
 - **Backups**: EBS/RDS snapshots; optional **Velero** for K8s objects/PVs.
 - **Exercises**: delete pods, drain node, delete svc/ingress, restore.
-- **Targets**: RTO 15–30m; RPO < 1h.
 
 ---
 ## 8) Commands & Runbooks
