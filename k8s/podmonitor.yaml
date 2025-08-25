@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: sentiment-podmonitor
+  namespace: ai-sentiment
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: sentiment-app
+  namespaceSelector:
+    matchNames: ["ai-sentiment"]
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scheme: http

@@ -1,0 +1,67 @@
+grafana:
+  adminUser: admin
+  adminPassword: admin123
+  service:
+    type: LoadBalancer
+  dashboards:
+    default:
+      sentiment-overview:
+        json: |
+          {
+            "title": "Sentiment API Overview",
+            "panels": [
+              {
+                "type": "stat",
+                "title": "Requests - 2xx",
+                "targets": [
+                  {"expr": "sum(increase(sentiment_requests_total{status='200'}[5m]))"}
+                ]
+              },
+              {
+                "type": "stat",
+                "title": "Requests - 4xx",
+                "targets": [
+                  {"expr": "sum(increase(sentiment_requests_total{status='400'}[5m]))"}
+                ]
+              },
+              {
+                "type": "stat",
+                "title": "Requests - 5xx",
+                "targets": [
+                  {"expr": "sum(increase(sentiment_requests_total{status='500'}[5m]))"}
+                ]
+              },
+              {
+                "type": "graph",
+                "title": "Latency (p50/p90/p99)",
+                "targets": [
+                  {"expr": "histogram_quantile(0.5, sum(rate(sentiment_request_latency_seconds_bucket[5m])) by (le))"},
+                  {"expr": "histogram_quantile(0.9, sum(rate(sentiment_request_latency_seconds_bucket[5m])) by (le))"},
+                  {"expr": "histogram_quantile(0.99, sum(rate(sentiment_request_latency_seconds_bucket[5m])) by (le))"}
+                ]
+              }
+            ],
+            "schemaVersion": 30,
+            "version": 1
+          }
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  enabled: true
+
+additionalPrometheusRulesMap:
+  sentiment-alerts:
+    groups:
+      - name: sentiment-api
+        rules:
+          - alert: High5xxRate
+            expr: sum(increase(sentiment_requests_total{status="500"}[5m])) > 5
+            for: 5m
+            labels: { severity: critical }
+            annotations:
+              summary: "High 5xx rate on sentiment API"
+              description: "More than 5 errors in last 5 minutes."
