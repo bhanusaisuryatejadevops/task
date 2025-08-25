@@ -128,6 +128,3 @@ curl -k https://<ALB-DNS>/metrics
 kubectl scale deploy sentiment-app -n ai-sentiment --replicas=4
 kubectl rollout undo deploy/sentiment-app -n ai-sentiment
 ```
-
----
-**Generated:** 2025-08-25 13:27 UTC
