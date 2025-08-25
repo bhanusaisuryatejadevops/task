@@ -18,21 +18,27 @@ REQ_LATENCY = Histogram(
 @app.route("/", methods=["GET"])
 def index():
     return (
-        "<h2>🚀 Welcome to the AI Sentiment Analysis API</h2>"
-        "<p>Use <b>POST /sentiment</b> with JSON like "
-        "<code>{\"text\": \"I am happy\"}</code> "
-        "to analyze sentiment.</p>"
+        "<h2>🌟 Sentiment Analysis Service</h2>"
+        "<p>Use:</p>"
+        "<ul>"
+        "<li>POST <b>/sentiment</b> with JSON <code>{\"text\": \"I am happy\"}</code></li>"
+        "<li>GET <b>/sentiment?text=I am busy today</b></li>"
+        "</ul>"
     )
 
-@app.route("/sentiment", methods=["POST"])
+@app.route("/sentiment", methods=["GET", "POST"])
 def sentiment():
     start = time.time()
     try:
-        data = request.get_json(silent=True) or {}
-        text = data.get("text", "").strip()
+        if request.method == "POST":
+            data = request.get_json(silent=True) or {}
+            text = data.get("text", "").strip()
+        else:  # GET
+            text = request.args.get("text", "").strip()
+
         if not text:
             REQ_COUNT.labels(status="400").inc()
-            return jsonify({"error": "Provide JSON {\"text\": \"I am happy\"}"}), 400
+            return jsonify({"error": "Provide text via POST {\"text\": \"I am happy\"} or GET /sentiment?text=..."}), 400
 
         blob = TextBlob(text)
         polarity = float(blob.sentiment.polarity)
