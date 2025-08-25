@@ -1,0 +1,133 @@
+# AI Sentiment App on EKS — End‑to‑End Delivery (Infra, CI/CD, Monitoring, Security & DR)
+This document captures the full setup for a scalable AI web application on **AWS EKS** with **Docker + Kubernetes**, **GitHub Actions CI/CD**, **Prometheus/Grafana monitoring**, **security** hardening, and a **disaster recovery (DR)** strategy.
+> **Context**
+> - Cloud: **AWS**
+> - Orchestration: **EKS** (Terraform-managed, S3 + DynamoDB backend)
+> - App: Python/Flask **sentiment analysis** (TextBlob)
+> - Container: Docker
+> - Ingress: **AWS Load Balancer Controller (ALB)**
+> - Autoscaling: **HPA**
+> - Monitoring: **kube-prometheus-stack** (Prometheus, Alertmanager, Grafana) via Helm
+> - App metrics: `/metrics` (Prometheus Python client) + **PodMonitor**
+> - SSL: ALB HTTPS (self‑signed or ACM), or HTTP when no domain
+> - Security: IRSA, RBAC, NetworkPolicy, secrets, encryption at rest
+> - DR: GitOps/IaC re-provision, Velero (optional), snapshots, runbooks
+
+---
+## 1) Cloud Infrastructure Design
+
+### 1.1 High-Level Architecture
+- **VPC** with public subnets (ALB) and private subnets (EKS nodes).
+- **EKS cluster** with node group (at least 2 nodes for HA).
+- **AWS Load Balancer Controller** to provision ALB from Ingress.
+- **ALB** (internet-facing) → routes to `sentiment-svc` (ClusterIP).
+- **HPA** scales `sentiment-app` based on CPU (and can be extended for custom metrics).
+- **kube-prometheus-stack** watches cluster + `PodMonitor` for app metrics.
+- **Grafana** exposed via `LoadBalancer` Service for access.
+- **Terraform** manages VPC/EKS/IAM with a **remote backend** (S3 + DynamoDB lock).
+
+### 1.2 Terraform Backend (S3 + DynamoDB)
+- State stored in **S3** with versioning & encryption.
+- DynamoDB table for **state locking** to prevent concurrent plans/applies.
+
+---
+## 2) Application & Container
+
+### 2.1 App Summary
+- Flask app endpoints: `/`, `/sentiment`, `/health`, `/metrics`.
+- Prometheus client exports counters + histograms for request count/latency.
+
+### 2.2 Dockerfile
+- `python:3.11-slim`, installs deps & corpora, exposes `5000`.
+
+---
+## 3) Kubernetes Deployment
+
+### 3.1 Manifests
+- **Deployment**: `sentiment-app` (2+ replicas), container port 5000 named `http`.
+- **Service**: `sentiment-svc` (ClusterIP 80→5000).
+- **Ingress**: `sentiment-ing` (class `alb`, internet-facing, target-type `ip`). TLS with self-signed or ACM; else HTTP.
+- **HPA**: CPU-based scaling (e.g., targetUtilization 60%).
+- **NetworkPolicy**: restrict ingress/egress.
+- **IRSA**: for ALB controller and apps needing AWS access.
+
+### 3.2 Monitoring
+- Helm install `kube-prometheus-stack` with `values-kube-prom-stack.yaml`.
+- Prometheus selectors allow external `PodMonitor` discovery.
+- Grafana exposed via `LoadBalancer`. Admin creds stored in a **Secret**.
+
+### 3.3 App Metrics Discovery
+- `PodMonitor` in `ai-sentiment`, label `release: kube-prometheus-stack`.
+- Endpoint: port `http`, path `/metrics`.
+
+---
+## 4) CI/CD (GitHub Actions)
+
+**Stages**: Lint & tests → (optional Trivy) → Build & push → Deploy to EKS → Smoke test.
+**Secrets**: Registry creds or OIDC/ECR; kube access via `aws eks update-kubeconfig`.
+**Rollback**: `kubectl rollout undo deploy/sentiment-app -n ai-sentiment`.
+
+---
+## 5) Monitoring & Alerting
+
+**Key metrics**:
+- `sentiment_requests_total{status}`
+- `sentiment_request_latency_seconds_bucket` + quantiles
+
+**PromQL**:
+- 2xx in 5m: `sum(increase(sentiment_requests_total{status="200"}[5m]))`
+- Error %:
+```
+100 * sum(increase(sentiment_requests_total{status=~"4..|5.."}[5m]))
+  / sum(increase(sentiment_requests_total[5m]))
+```
+- p90 latency:
+```
+histogram_quantile(0.9, sum(rate(sentiment_request_latency_seconds_bucket[5m])) by (le))
+```
+
+**Alert**: High 5xx in 5m:
+```
+sum(increase(sentiment_requests_total{status="500"}[5m])) > 5
+```
+
+---
+## 6) Security
+
+- **TLS**: ALB HTTPS (self-signed or ACM).
+- **IRSA**: least-privilege IAM policies to service accounts.
+- **RBAC**: restrict cluster access; disable `kubectl exec` to prod.
+- **Network**: private nodes; SG least privilege; NetworkPolicy.
+- **Secrets**: Kubernetes Secret (KMS) or AWS Secrets Manager.
+- **Images**: scan with Trivy; run as non-root where possible.
+
+---
+## 7) Disaster Recovery (DR)
+
+- **Stateless**: redeploy from manifests/Helm.
+- **IaC**: Terraform + remote state → re-provision EKS/ALB/VPC.
+- **Backups**: EBS/RDS snapshots; optional **Velero** for K8s objects/PVs.
+- **Exercises**: delete pods, drain node, delete svc/ingress, restore.
+- **Targets**: RTO 15–30m; RPO < 1h.
+
+---
+## 8) Commands & Runbooks
+
+- Deploy/restore:
+```
+kubectl apply -f k8s/
+```
+- Validate:
+```
+kubectl get pods,svc,ingress -n ai-sentiment
+curl -k https://<ALB-DNS>/health
+curl -k https://<ALB-DNS>/metrics
+```
+- Scale/rollback:
+```
+kubectl scale deploy sentiment-app -n ai-sentiment --replicas=4
+kubectl rollout undo deploy/sentiment-app -n ai-sentiment
+```
+
+---
+**Generated:** 2025-08-25 13:27 UTC
