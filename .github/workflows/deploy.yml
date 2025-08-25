@@ -9,13 +9,12 @@ env:
   AWS_REGION: us-west-2
   ECR_REGISTRY: 321858344734.dkr.ecr.us-west-2.amazonaws.com
   ECR_REPO: devops-ai-app
-  IMAGE_TAG: latest
 
 jobs:
   build-test-push-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -23,7 +22,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install test deps
+      - name: Install test dependencies
         run: |
           pip install -r app/requirements.txt pytest
 
@@ -39,28 +38,30 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & Push Image to ECR
+      - name: Build & Push Docker Image
         run: |
-          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
+          IMAGE_TAG=${GITHUB_SHA::7}  # first 7 chars of commit SHA
+          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:$IMAGE_TAG
           docker build -t $IMAGE_URI app
           docker push $IMAGE_URI
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV  # export for next steps
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
 
-      - name: Apply app manifests and rollout
+      - name: Apply namespace and auxiliary manifests
         run: |
-          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
           kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/hpa.yaml
           kubectl apply -f k8s/networkpolicy.yaml
-          kubectl apply -f k8s/podmonitor.yaml
           kubectl apply -f k8s/ingress.yaml || true
-          # Ensure deployment uses the newest image and perform a rolling update
-          kubectl set image deployment/sentiment-app -n ai-sentiment sentiment-app=$IMAGE_URI
-          kubectl rollout status deployment/sentiment-app -n ai-sentiment --timeout=120s
+
+      - name: Deploy app with new image and rollout
+        run: |
+          kubectl set image deployment/sentiment-app \
+            -n ai-sentiment sentiment-app=$IMAGE_URI
+          kubectl rollout status deployment/sentiment-app \
+            -n ai-sentiment --timeout=300s
