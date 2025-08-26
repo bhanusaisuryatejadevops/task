@@ -5,10 +5,10 @@ on:
     branches: [ "main" ]
 
 env:
-  EKS_CLUSTER: main-cluster
+  EKS_CLUSTER: my-eks-cluster
   AWS_REGION: us-west-2
   ECR_REGISTRY: 321858344734.dkr.ecr.us-west-2.amazonaws.com
-  ECR_REPO: devops-ai-app
+  ECR_REPO: my-app-repo
 
 jobs:
   build-test-push-deploy:
