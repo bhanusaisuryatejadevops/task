@@ -34,9 +34,6 @@ resource "aws_eks_node_group" "node_group" {
     min_size     = 1
   }
 
-  instance_types = ["t3.medium"]
-}
-
 output "cluster_name" {
   value = aws_eks_cluster.this.name
 }
