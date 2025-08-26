@@ -57,6 +57,9 @@ jobs:
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/hpa.yaml
           kubectl apply -f k8s/networkpolicy.yaml
+          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/secret.yaml
+
 
       - name: Apply deployment manifest
         run: |
