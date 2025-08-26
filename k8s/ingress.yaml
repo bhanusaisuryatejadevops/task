@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-sentiment-ingress
+  namespace: ai-sentiment
+  annotations:
+    kubernetes.io/ingress.class: alb # optional if using AWS ALB
+spec:
+  tls:
+  - hosts:
+    - example.local
+    secretName: tls-secret
+  rules:
+  - host: example.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sentiment-svc
+            port:
+              number: 80
