@@ -8,10 +8,11 @@ metadata:
 spec:
   tls:
     - hosts:
-        - "example.local"    # still needed for TLS, browser will warn
+        - example.local
       secretName: tls-secret
   rules:
-    - http:
+    - host: example.local
+      http:
         paths:
           - path: /
             pathType: Prefix
