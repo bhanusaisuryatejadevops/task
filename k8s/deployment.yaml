@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
       - name: sentiment-app
-        image: 321858344734.dkr.ecr.us-west-2.amazonaws.com/my-app-repo:latest
+        image: 321858344734.dkr.ecr.us-west-2.amazonaws.com/devops-ai-app@sha256:66e81d9f6c9533...
         imagePullPolicy: Always
         ports:
           - name: http
