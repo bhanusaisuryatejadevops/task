@@ -58,9 +58,13 @@ jobs:
           kubectl apply -f k8s/hpa.yaml
           kubectl apply -f k8s/networkpolicy.yaml
 
-      - name: Deploy app with new image and rollout
+      - name: Apply deployment manifest
         run: |
-          kubectl set image deployment/sentiment-app \
-            -n ai-sentiment sentiment-app=$IMAGE_URI
+          # Replace placeholder image in deployment.yaml with CI/CD image URI
+          sed -i "s|REPLACE_WITH_IMAGE_URI|${IMAGE_URI}|g" k8s/deployment.yaml
+          kubectl apply -f k8s/deployment.yaml
+
+      - name: Rollout deployment
+        run: |
           kubectl rollout status deployment/sentiment-app \
             -n ai-sentiment --timeout=300s
