@@ -1,3 +1,9 @@
+variable "vpc_id" {}
+variable "subnets" {
+  type = list(string)
+}
+variable "ecr_repo_url" {}
+
 data "aws_iam_policy_document" "eks_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
