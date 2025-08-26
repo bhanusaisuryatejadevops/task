@@ -4,7 +4,7 @@ terraform {
   backend "s3" {
     bucket         = "my-terraform-state-bucket"
     key            = "aws-infra/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "us-west-2"
     dynamodb_table = "terraform-lock"
     encrypt        = true
   }
@@ -18,7 +18,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "us-west-2"
 }
 
 module "vpc" {
