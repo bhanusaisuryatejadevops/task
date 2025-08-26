@@ -108,7 +108,7 @@ sum(increase(sentiment_requests_total{status="500"}[5m])) > 5
 - **Exercises**: delete pods, drain node, delete svc/ingress, restore.
 
 ---
-## 8) Commands & Runbooks
+## 8) Commands
 
 - Deploy/restore:
 ```
