@@ -57,7 +57,6 @@ jobs:
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/hpa.yaml
           kubectl apply -f k8s/networkpolicy.yaml
-          kubectl apply -f k8s/ingress.yaml || true
 
       - name: Deploy app with new image and rollout
         run: |
