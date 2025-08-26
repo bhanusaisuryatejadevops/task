@@ -1,11 +1,11 @@
-resource "aws_ecr_repository" "main" {
-  name                 = "main-repo"
+resource "aws_ecr_repository" "app" {
+  name = "main-repo"
   image_tag_mutability = "MUTABLE"
-  tags = {
-    Name = "main-ecr"
+  image_scanning_configuration {
+    scan_on_push = true
   }
 }
 
 output "repository_url" {
-  value = aws_ecr_repository.main.repository_url
+  value = aws_ecr_repository.app.repository_url
 }

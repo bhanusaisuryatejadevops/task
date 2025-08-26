@@ -1,33 +1,46 @@
 terraform {
+  required_version = ">= 1.4.0"
+
+  backend "s3" {
+    bucket         = "my-terraform-state-bucket"
+    key            = "aws-infra/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-lock"
+    encrypt        = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.10"
     }
-  }
-  backend "s3" {
-    bucket         = "my-terraform-state-bucket-321858344734"
-    key            = "state/terraform.tfstate"
-    region         = "us-west-2"
-    dynamodb_table = "terraform-locks"
   }
 }
 
 provider "aws" {
-  region = "us-west-2"
+  region = "us-east-1"
 }
 
+# -----------------------------
+# VPC Module
+# -----------------------------
 module "vpc" {
-  source = "./vpc"
+  source  = "./modules/vpc"
 }
 
+# -----------------------------
+# ECR Module
+# -----------------------------
 module "ecr" {
-  source = "./ecr"
+  source = "./modules/ecr"
 }
 
+# -----------------------------
+# EKS Module
+# -----------------------------
 module "eks" {
-  source       = "./eks"
+  source       = "./modules/eks"
   vpc_id       = module.vpc.vpc_id
-  subnet_ids   = module.vpc.subnet_ids
-  eks_role_arn = "arn:aws:iam::321858344734:role/EKSManagedRole"
+  subnets      = module.vpc.private_subnets
+  ecr_repo_url = module.ecr.repository_url
 }
