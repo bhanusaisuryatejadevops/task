@@ -8,11 +8,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - aff6e2161278c48358fce5e1c81b4c0b-1776960371.us-west-2.elb.amazonaws.com
+        - "example.local"    # still needed for TLS, browser will warn
       secretName: tls-secret
   rules:
-    - host: aff6e2161278c48358fce5e1c81b4c0b-1776960371.us-west-2.elb.amazonaws.com
-      http:
+    - http:
         paths:
           - path: /
             pathType: Prefix
