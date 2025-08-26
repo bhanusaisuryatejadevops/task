@@ -21,23 +21,14 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# -----------------------------
-# VPC Module
-# -----------------------------
 module "vpc" {
   source  = "./modules/vpc"
 }
 
-# -----------------------------
-# ECR Module
-# -----------------------------
 module "ecr" {
   source = "./modules/ecr"
 }
 
-# -----------------------------
-# EKS Module
-# -----------------------------
 module "eks" {
   source       = "./modules/eks"
   vpc_id       = module.vpc.vpc_id
