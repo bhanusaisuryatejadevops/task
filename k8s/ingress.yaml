@@ -3,14 +3,15 @@ kind: Ingress
 metadata:
   name: ai-sentiment-ingress
   namespace: ai-sentiment
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  ingressClassName: alb
   tls:
     - hosts:
-        - abf575ab25a7844ebbe9063a287d7226-675097908.us-west-2.elb.amazonaws.com
+        - aff6e2161278c48358fce5e1c81b4c0b-1776960371.us-west-2.elb.amazonaws.com
       secretName: tls-secret
   rules:
-    - host: abf575ab25a7844ebbe9063a287d7226-675097908.us-west-2.elb.amazonaws.com
+    - host: aff6e2161278c48358fce5e1c81b4c0b-1776960371.us-west-2.elb.amazonaws.com
       http:
         paths:
           - path: /
