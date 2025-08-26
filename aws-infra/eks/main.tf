@@ -100,7 +100,7 @@ resource "aws_eks_node_group" "main" {
   tags = {
     Name        = var.node_group_name
     Environment = "dev"
-    Project     = "CRPIT"
+    Project     = "AI=sentiment-EKS"
   }
 }
 
