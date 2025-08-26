@@ -3,21 +3,20 @@ kind: Ingress
 metadata:
   name: ai-sentiment-ingress
   namespace: ai-sentiment
-  annotations:
-    kubernetes.io/ingress.class: alb # optional if using AWS ALB
 spec:
+  ingressClassName: alb
   tls:
-  - hosts:
-    - example.local
-    secretName: tls-secret
+    - hosts:
+        - abf575ab25a7844ebbe9063a287d7226-675097908.us-west-2.elb.amazonaws.com
+      secretName: tls-secret
   rules:
-  - host: example.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: sentiment-svc
-            port:
-              number: 80
+    - host: abf575ab25a7844ebbe9063a287d7226-675097908.us-west-2.elb.amazonaws.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sentiment-svc
+                port:
+                  number: 80
